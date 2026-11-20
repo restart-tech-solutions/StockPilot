@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+@theme {
+  --color-stock-deep-navy: #0F2747;
+  --color-stock-primary-blue: #1D4ED8;
+  --color-stock-accent-teal: #0F766E;
+  --color-stock-light-grey: #F3F6FA;
+  --color-stock-white: #FFFFFF;
+  --color-stock-primary-text: #172033;
+  --color-stock-secondary-text: #64748B;
+  --color-stock-border: #DCE3EC;
+}
+
+:root {
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  color: #172033;
+  background: #F3F6FA;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 0;
+  min-height: 100%;
+  background: #F3F6FA;
+}
+
+body {
+  min-width: 0;
+  min-height: 100vh;
+  margin: 0;
+  background: #F3F6FA;
+}
+
+body,
+#root {
+  overflow-x: hidden;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  .invoice-printable,
+  .invoice-printable * {
+    visibility: visible !important;
+  }
+
+  .invoice-printable {
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+}
