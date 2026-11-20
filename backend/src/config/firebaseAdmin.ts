@@ -1,9 +1,22 @@
+
 import { initializeApp, cert, getApps, App } from "firebase-admin/app";
 import { getAuth, Auth } from "firebase-admin/auth";
 import path from "path";
 import fs from "fs";
 
-function resolveServiceAccount(): string | undefined {
+function getFirebaseCredentials() {
+  const jsonCredentials = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+
+  if (jsonCredentials) {
+    try {
+      return JSON.parse(jsonCredentials);
+    } catch {
+      throw new Error(
+        "Invalid FIREBASE_SERVICE_ACCOUNT_JSON environment variable"
+      );
+    }
+  }
+
   const possiblePaths = [
     process.env.FIREBASE_SERVICE_ACCOUNT_PATH,
     path.resolve(process.cwd(), "private/firebase-service-account.json"),
@@ -17,23 +30,28 @@ function resolveServiceAccount(): string | undefined {
       return candidate;
     }
   }
+
   return undefined;
 }
 
 let firebaseApp: App;
-const serviceAccountPath = resolveServiceAccount();
+
+const credentials = getFirebaseCredentials();
 
 if (getApps().length > 0) {
   firebaseApp = getApps()[0];
-} else if (serviceAccountPath) {
+} else if (credentials) {
   firebaseApp = initializeApp({
-    credential: cert(serviceAccountPath),
-    projectId: "stockpilot-5b992",
-  });
-} else {
-  firebaseApp = initializeApp({
+    credential:
+      typeof credentials === "string"
+        ? cert(credentials)
+        : cert(credentials),
     projectId: process.env.FIREBASE_PROJECT_ID || "stockpilot-5b992",
   });
+} else {
+  throw new Error(
+    "Firebase credentials missing. Configure FIREBASE_SERVICE_ACCOUNT_JSON."
+  );
 }
 
 export const firebaseAdmin = firebaseApp;
