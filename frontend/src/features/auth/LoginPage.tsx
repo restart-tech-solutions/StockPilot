@@ -6,7 +6,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import {
   signInWithEmailAndPassword,
-  sendEmailVerification,
+  signOut,
 } from "firebase/auth";
 import { auth } from "../../config/firebase";
 import { FormField } from "../../components/ui/FormField";
@@ -84,9 +84,10 @@ export function LoginPage() {
       );
 
       if (!credential.user.emailVerified) {
-        await sendEmailVerification(credential.user);
+        await signOut(auth);
+
         throw new Error(
-          "Please verify your email before logging in. A verification email has been sent."
+          "Your email is not verified yet. Please check your inbox or spam folder and verify your email before logging in."
         );
       }
 
