@@ -57,6 +57,24 @@ const CustomerManagementPage = lazy(() =>
   }))
 );
 
+const SubscriptionBillingPage = lazy(() =>
+  import("../features/subscription/SubscriptionBillingPage").then((module) => ({
+    default: module.SubscriptionBillingPage,
+  }))
+);
+
+const TaxInvoiceSettingsPage = lazy(() =>
+  import("../features/settings/TaxInvoiceSettingsPage").then((module) => ({
+    default: module.TaxInvoiceSettingsPage,
+  }))
+);
+
+const WarehouseManagementPage = lazy(() =>
+  import("../features/warehouses/WarehouseManagementPage").then((module) => ({
+    default: module.WarehouseManagementPage,
+  }))
+);
+
 const SupplierManagementPage = lazy(() =>
   import("../features/suppliers/SupplierManagementPage").then((module) => ({
     default: module.SupplierManagementPage,
@@ -221,7 +239,7 @@ export function AppRouter() {
 <Route
   path="/categories/*"
   element={<CategoryManagementPage />}
-/>            <Route path="/warehouses/*" element={<BusinessPlaceholder />} />
+/>            <Route path="/warehouses/*" element={<WarehouseManagementPage />} />
             <Route path="/inventory/alerts" element={<StockAlertsPage />} />
             <Route path="/inventory/*" element={<WarehouseInventoryPage />} />
             <Route path="/suppliers/*" element={<SupplierManagementPage />} />
@@ -236,8 +254,8 @@ export function AppRouter() {
               path="/settings/notifications"
               element={<NotificationPreferencesPage />}
             />
-            <Route path="/settings/*" element={<BusinessPlaceholder />} />
-            <Route path="/subscription/*" element={<BusinessPlaceholder />} />
+            <Route path="/settings/tax-invoice" element={<TaxInvoiceSettingsPage />} />
+            <Route path="/subscription/*" element={<SubscriptionBillingPage />} />
             <Route path="/notifications/*" element={<NotificationsPage />} />
             <Route path="/audit-logs/*" element={<AuditLogsPage />} />
             <Route path="/platform/*" element={<PlatformPlaceholder />} />
