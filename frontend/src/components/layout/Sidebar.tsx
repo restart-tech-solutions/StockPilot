@@ -1,5 +1,7 @@
-import { NavLink } from "react-router-dom";
+
+import { NavLink, useNavigate } from "react-router-dom";
 import type { ShellMode } from "./AppShell";
+import { useAuth } from "../../features/auth/authContext";
 
 interface SidebarProps {
   mode: ShellMode;
@@ -85,6 +87,14 @@ const platformNavigation: NavigationGroup[] = [
 
 export function Sidebar({ mode, open, onClose }: SidebarProps) {
   const groups = mode === "business" ? businessNavigation : platformNavigation;
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    onClose();
+    navigate("/login", { replace: true });
+  };
 
   return (
     <aside
@@ -103,6 +113,7 @@ export function Sidebar({ mode, open, onClose }: SidebarProps) {
         >
           StockPilot
         </NavLink>
+
         <button
           type="button"
           aria-label="Close sidebar"
@@ -117,18 +128,27 @@ export function Sidebar({ mode, open, onClose }: SidebarProps) {
 
       <nav className="min-h-0 flex-1 overflow-y-auto px-3 pb-6">
         {groups.map((group, groupIndex) => (
-          <div key={`${group.label}-${groupIndex}`} className={groupIndex === 0 ? "pb-2" : "border-t border-white/10 py-3"}>
+          <div
+            key={`${group.label}-${groupIndex}`}
+            className={
+              groupIndex === 0
+                ? "pb-2"
+                : "border-t border-white/10 py-3"
+            }
+          >
             {group.label && (
               <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-white/55">
                 {group.label}
               </p>
             )}
+
             <div className="space-y-1">
               {group.items.map((item) => (
                 <NavLink
                   key={item.path}
                   to={item.path}
                   end={item.path === "/" || item.path === "/platform"}
+                  onClick={onClose}
                   className={({ isActive }) =>
                     [
                       "flex min-h-10 items-center rounded-lg px-3 text-sm font-medium transition-colors",
@@ -150,6 +170,15 @@ export function Sidebar({ mode, open, onClose }: SidebarProps) {
         <p className="text-xs text-white/55">
           {mode === "business" ? "Business Workspace" : "Super Admin"}
         </p>
+
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="mt-4 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-300 transition-colors hover:bg-red-500/10 hover:text-red-200"
+        >
+          <span aria-hidden="true">↪</span>
+          Logout
+        </button>
       </div>
     </aside>
   );
