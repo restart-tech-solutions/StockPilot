@@ -85,8 +85,9 @@ export function WarehouseManagementPage() {
     setLoading(true);
     setError("");
 
-    apiRequest<WarehouseListResponse>("/warehouses")
-      .then((response) => {
+apiRequest<WarehouseListResponse>(
+  `/warehouses?businessId=${encodeURIComponent(workspace.id)}`
+)      .then((response) => {
         if (!response.success || !Array.isArray(response.warehouses)) {
           throw new Error("Unable to load warehouses.");
         }
@@ -118,8 +119,8 @@ export function WarehouseManagementPage() {
     setError("");
 
     apiRequest<WarehouseResponse>(
-      `/warehouses/${encodeURIComponent(warehouseId)}`
-    )
+  `/warehouses/${encodeURIComponent(warehouseId)}?businessId=${encodeURIComponent(workspace.id)}`
+)
       .then((response) => {
         if (!response.success || !response.warehouse) {
           throw new Error("Warehouse details could not be loaded.");
@@ -186,8 +187,10 @@ export function WarehouseManagementPage() {
           : "/warehouses",
         {
           method: isEdit ? "PUT" : "POST",
-          body: JSON.stringify(parsed.data),
-        }
+body: JSON.stringify({
+  ...parsed.data,
+  businessId: workspace.id,
+}),        }
       );
 
       if (!response.success || !response.warehouse?._id) {
@@ -214,11 +217,11 @@ export function WarehouseManagementPage() {
     setError("");
 
     try {
+      
       await apiRequest(
-        `/warehouses/${encodeURIComponent(target._id)}`,
-        { method: "DELETE" }
-      );
-
+  `/warehouses/${encodeURIComponent(target._id)}?businessId=${encodeURIComponent(workspace?.id ?? "")}`,
+  { method: "DELETE" }
+);
       if (warehouse?._id === target._id) {
         navigate("/warehouses", { replace: true });
       }
