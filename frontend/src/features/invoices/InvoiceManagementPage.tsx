@@ -114,9 +114,14 @@ function getErrorMessage(error: unknown, fallback: string): string {
 }
 
 function formatAmount(value: number, currency: string): string {
-  return new Intl.NumberFormat(undefined, {
+  const normalizedCurrency = currency?.trim().toUpperCase() ?? "";
+  const currencyCode = /^[A-Z]{3}$/.test(normalizedCurrency)
+    ? normalizedCurrency
+    : "INR";
+
+  return new Intl.NumberFormat("en-IN", {
     style: "currency",
-    currency: currency || "INR",
+    currency: currencyCode,
   }).format(value);
 }
 
@@ -448,7 +453,7 @@ export function InvoiceManagementPage() {
         title="Invoices"
         description="Invoices and payment history."
       >
-        <section className="rounded-xl border border-stock-border bg-white p-5">
+        <section className="rounded-2xl border border-slate-200 bg-white shadow-sm p-5">
           <p className="text-sm text-stock-secondary-text">
             Select a workspace to manage invoices.
           </p>
@@ -485,7 +490,7 @@ export function InvoiceManagementPage() {
         ) : (
           <Link
             to="/invoices"
-            className="inline-flex h-10 items-center rounded-lg border border-stock-border bg-white px-4 text-sm font-medium text-stock-primary-text"
+            className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white shadow-sm px-4 text-sm font-medium text-stock-primary-text"
           >
             Back to Invoices
           </Link>
@@ -495,7 +500,7 @@ export function InvoiceManagementPage() {
       {error && (
         <div
           role="alert"
-          className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          className="mb-5 rounded-lg border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
         >
           {error}
           <button
@@ -520,7 +525,7 @@ export function InvoiceManagementPage() {
               }}
               placeholder="Search invoice or customer..."
               aria-label="Search invoices"
-              className="h-11 rounded-lg border border-stock-border bg-white px-3 text-sm xl:col-span-2"
+              className="h-11 rounded-xl border border-slate-200 bg-white shadow-sm px-3 text-sm xl:col-span-2"
             />
             <select
               value={statusFilter}
@@ -529,7 +534,7 @@ export function InvoiceManagementPage() {
                 setPage(1);
               }}
               aria-label="Filter by payment status"
-              className="h-11 rounded-lg border border-stock-border bg-white px-3 text-sm"
+              className="h-11 rounded-xl border border-slate-200 bg-white shadow-sm px-3 text-sm"
             >
               <option value="">All payment statuses</option>
               {paymentStatuses.map((status) => (
@@ -549,7 +554,7 @@ export function InvoiceManagementPage() {
                     setFromDate(event.target.value);
                     setPage(1);
                   }}
-                  className="h-11 w-full rounded-lg border border-stock-border bg-white px-2 text-sm text-stock-primary-text"
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-white shadow-sm px-2 text-sm text-stock-primary-text"
                 />
               </label>
               <label className="space-y-1 text-xs text-stock-secondary-text">
@@ -562,15 +567,15 @@ export function InvoiceManagementPage() {
                     setToDate(event.target.value);
                     setPage(1);
                   }}
-                  className="h-11 w-full rounded-lg border border-stock-border bg-white px-2 text-sm text-stock-primary-text"
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-white shadow-sm px-2 text-sm text-stock-primary-text"
                 />
               </label>
             </div>
           </div>
-          <section className="overflow-hidden rounded-xl border border-stock-border bg-white">
+          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[54rem] text-left text-sm">
-                <thead className="bg-stock-light-grey text-stock-secondary-text">
+                <thead className="bg-slate-50 text-slate-500">
                   <tr>
                     {[
                       "Invoice",
@@ -583,7 +588,7 @@ export function InvoiceManagementPage() {
                       <th
                         key={heading}
                         scope="col"
-                        className="px-4 py-3 font-medium"
+                        className="px-5 py-4 font-semibold"
                       >
                         {heading}
                       </th>
@@ -611,25 +616,25 @@ export function InvoiceManagementPage() {
                     </tr>
                   ) : (
                     invoices.map((item) => (
-                      <tr key={item._id} className="border-t border-stock-border">
-                        <td className="px-4 py-3 font-medium">
+                      <tr key={item._id} className="border-t border-slate-100 transition-colors hover:bg-blue-50/40">
+                        <td className="px-5 py-4 font-semibold">
                           {item.invoiceNumber}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-5 py-4">
                           {formatDate(item.invoiceDate)}
                         </td>
-                        <td className="px-4 py-3">{item.customerName}</td>
-                        <td className="px-4 py-3">
+                        <td className="px-5 py-4">{item.customerName}</td>
+                        <td className="px-5 py-4">
                           {formatAmount(item.totalAmount, item.currency)}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-5 py-4">
                           <span
                             className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${statusClass(item.paymentStatus)}`}
                           >
                             {statusLabel(item.paymentStatus)}
                           </span>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-5 py-4">
                           <Link
                             className="font-medium text-stock-primary-blue hover:underline"
                             to={`/invoices/${item._id}`}
@@ -653,7 +658,7 @@ export function InvoiceManagementPage() {
                 type="button"
                 disabled={loading || page <= 1}
                 onClick={() => setPage((value) => value - 1)}
-                className="h-10 rounded-lg border border-stock-border bg-white px-3 disabled:opacity-50"
+                className="h-10 rounded-xl border border-slate-200 bg-white shadow-sm px-3 disabled:opacity-50"
               >
                 Previous
               </button>
@@ -661,7 +666,7 @@ export function InvoiceManagementPage() {
                 type="button"
                 disabled={loading || page >= totalPages}
                 onClick={() => setPage((value) => value + 1)}
-                className="h-10 rounded-lg border border-stock-border bg-white px-3 disabled:opacity-50"
+                className="h-10 rounded-xl border border-slate-200 bg-white shadow-sm px-3 disabled:opacity-50"
               >
                 Next
               </button>
@@ -671,7 +676,7 @@ export function InvoiceManagementPage() {
       )}
 
       {isCreate && (
-        <section className="mx-auto max-w-3xl space-y-5 rounded-xl border border-stock-border bg-white p-5 shadow-sm sm:p-8">
+        <section className="mx-auto max-w-3xl space-y-5 rounded-2xl border border-slate-200 bg-white shadow-sm p-5 shadow-sm sm:p-8">
           <div>
             <h2 className="text-lg font-semibold text-stock-primary-text">
               Select a completed sale
@@ -710,7 +715,7 @@ export function InvoiceManagementPage() {
               value={salesSearch}
               onChange={(event) => setSalesSearch(event.target.value)}
               placeholder="Sale number or customer..."
-              className="h-11 w-full rounded-lg border border-stock-border px-3 font-normal"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 font-normal text-slate-700 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
             />
           </label>
           {salesLoading ? (
@@ -734,7 +739,7 @@ export function InvoiceManagementPage() {
                   onChange={(event) =>
                     setSelectedSalesOrderId(event.target.value)
                   }
-                  className="h-11 w-full rounded-lg border border-stock-border bg-white px-3 font-normal"
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-white shadow-sm px-3 font-normal"
                 >
                   <option value="">Select a completed sale</option>
                   {availableSales.map((sale) => (
@@ -745,7 +750,7 @@ export function InvoiceManagementPage() {
                   ))}
                 </select>
               </label>
-              <div className="flex flex-col-reverse gap-3 border-t border-stock-border pt-5 sm:flex-row sm:justify-end">
+              <div className="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end">
                 <Link
                   to="/invoices"
                   className="inline-flex h-11 items-center justify-center rounded-lg border border-stock-border px-4 text-sm font-medium"
@@ -760,7 +765,7 @@ export function InvoiceManagementPage() {
                     !selectedSalesOrderId ||
                     !canGenerate
                   }
-                  className="h-11 rounded-lg bg-stock-primary-blue px-4 text-sm font-semibold text-white disabled:opacity-60"
+                  className="h-11 rounded-xl bg-blue-700 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800 hover:shadow-md disabled:opacity-60 disabled:opacity-60"
                 >
                   {formSubmitting ? "Generating..." : "Generate Invoice"}
                 </button>
@@ -778,7 +783,7 @@ export function InvoiceManagementPage() {
             </p>
           )}
           {!loading && !invoice && !error && (
-            <p className="rounded-xl border border-stock-border bg-white p-6 text-sm text-stock-secondary-text">
+            <p className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 text-sm text-stock-secondary-text">
               Invoice not found.
             </p>
           )}
@@ -801,8 +806,8 @@ export function InvoiceManagementPage() {
                   )}
                 </p>
               )}
-              <article className="invoice-printable mx-auto max-w-5xl rounded-xl border border-stock-border bg-white p-5 shadow-sm sm:p-8 print:border-0 print:shadow-none">
-                <div className="flex flex-col gap-5 border-b border-stock-border pb-5 sm:flex-row sm:items-start sm:justify-between">
+              <article className="invoice-printable mx-auto max-w-5xl rounded-2xl border border-slate-200 bg-white p-6 shadow-md sm:p-9 shadow-sm sm:p-8 print:border-0 print:shadow-none">
+                <div className="flex flex-col gap-5 border-b border-slate-100 pb-5 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <p className="text-sm font-semibold uppercase tracking-wide text-stock-accent-teal">
                       StockPilot · Invoice
@@ -829,7 +834,7 @@ export function InvoiceManagementPage() {
                       type="button"
                       disabled={pdfDownloading}
                       onClick={() => void downloadInvoice()}
-                      className="h-10 rounded-lg bg-stock-primary-blue px-3 text-sm font-semibold text-white disabled:opacity-60"
+                      className="h-10 rounded-xl bg-blue-700 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800 disabled:opacity-60"
                     >
                       {pdfDownloading ? "Preparing PDF..." : "Download PDF"}
                     </button>
@@ -842,7 +847,7 @@ export function InvoiceManagementPage() {
                     </button>
                   </div>
                 </div>
-                <div className="grid gap-5 border-b border-stock-border py-5 sm:grid-cols-2">
+                <div className="grid gap-5 border-b border-slate-100 py-5 sm:grid-cols-2">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-stock-secondary-text">
                       Bill to
@@ -883,7 +888,7 @@ export function InvoiceManagementPage() {
                 </div>
                 <div className="overflow-x-auto py-5">
                   <table className="w-full min-w-[52rem] text-left text-sm">
-                    <thead className="bg-stock-light-grey text-stock-secondary-text">
+                    <thead className="bg-slate-50 text-slate-500">
                       <tr>
                         {[
                           "Product",
@@ -896,7 +901,7 @@ export function InvoiceManagementPage() {
                           <th
                             key={heading}
                             scope="col"
-                            className="px-3 py-3 font-medium"
+                            className="px-4 py-4 font-semibold"
                           >
                             {heading}
                           </th>
@@ -907,26 +912,26 @@ export function InvoiceManagementPage() {
                       {invoice.products.map((item) => (
                         <tr
                           key={item.productId}
-                          className="border-b border-stock-border"
+                          className="border-b border-slate-100"
                         >
-                          <td className="px-3 py-3">
+                          <td className="px-4 py-4">
                             <span className="font-medium">{item.productName}</span>
                             <span className="block text-xs text-stock-secondary-text">
                               {item.sku}
                             </span>
                           </td>
-                          <td className="px-3 py-3">{item.quantity}</td>
-                          <td className="px-3 py-3">
+                          <td className="px-4 py-4">{item.quantity}</td>
+                          <td className="px-4 py-4">
                             {formatAmount(item.unitPrice, invoice.currency)}
                           </td>
-                          <td className="px-3 py-3">
+                          <td className="px-4 py-4">
                             {item.discountPercentage}% ·{" "}
                             {formatAmount(item.discountAmount, invoice.currency)}
                           </td>
-                          <td className="px-3 py-3">
+                          <td className="px-4 py-4">
                             {formatAmount(item.taxAmount, invoice.currency)}
                           </td>
-                          <td className="px-3 py-3 font-medium">
+                          <td className="px-4 py-4 font-semibold">
                             {formatAmount(item.lineTotal, invoice.currency)}
                           </td>
                         </tr>
@@ -934,7 +939,7 @@ export function InvoiceManagementPage() {
                     </tbody>
                   </table>
                 </div>
-                <div className="ml-auto max-w-sm space-y-2 border-t border-stock-border pt-4 text-sm">
+                <div className="ml-auto max-w-sm space-y-2 border-t border-slate-100 pt-4 text-sm">
                   <div className="flex justify-between gap-4">
                     <span>Subtotal</span>
                     <span>{formatAmount(invoice.subtotal, invoice.currency)}</span>
@@ -951,7 +956,7 @@ export function InvoiceManagementPage() {
                     </span>
                     <span>{formatAmount(invoice.tax, invoice.currency)}</span>
                   </div>
-                  <div className="flex justify-between gap-4 border-t border-stock-border pt-2 text-base font-semibold">
+                  <div className="flex justify-between gap-4 border-t border-slate-100 pt-2 text-base font-semibold">
                     <span>Total payable</span>
                     <span>
                       {formatAmount(invoice.totalAmount, invoice.currency)}
@@ -973,7 +978,7 @@ export function InvoiceManagementPage() {
               </article>
 
               {canRecordPayment && invoice.balanceDue > 0 && (
-                <section className="rounded-xl border border-stock-border bg-white p-5 shadow-sm sm:p-7">
+                <section className="rounded-2xl border border-slate-200 bg-white shadow-sm p-5 shadow-sm sm:p-7">
                   <h2 className="text-lg font-semibold">Record Payment</h2>
                   <p className="mt-1 text-sm text-stock-secondary-text">
                     Outstanding balance:{" "}
@@ -1003,7 +1008,7 @@ export function InvoiceManagementPage() {
                         onChange={(event) =>
                           setPaymentAmount(event.target.value)
                         }
-                        className="h-11 w-full rounded-lg border border-stock-border px-3 font-normal"
+                        className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 font-normal text-slate-700 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                       />
                     </label>
                     <label className="space-y-1.5 text-sm font-medium">
@@ -1013,7 +1018,7 @@ export function InvoiceManagementPage() {
                         onChange={(event) =>
                           setPaymentMethod(event.target.value as PaymentMethod)
                         }
-                        className="h-11 w-full rounded-lg border border-stock-border bg-white px-3 font-normal"
+                        className="h-11 w-full rounded-xl border border-slate-200 bg-white shadow-sm px-3 font-normal"
                       >
                         {paymentMethods.map((method) => (
                           <option key={method} value={method}>
@@ -1030,7 +1035,7 @@ export function InvoiceManagementPage() {
                         onChange={(event) =>
                           setPaymentReference(event.target.value)
                         }
-                        className="h-11 w-full rounded-lg border border-stock-border px-3 font-normal"
+                        className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 font-normal text-slate-700 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                       />
                     </label>
                     <label className="space-y-1.5 text-sm font-medium">
@@ -1039,14 +1044,14 @@ export function InvoiceManagementPage() {
                         maxLength={500}
                         value={paymentNote}
                         onChange={(event) => setPaymentNote(event.target.value)}
-                        className="h-11 w-full rounded-lg border border-stock-border px-3 font-normal"
+                        className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 font-normal text-slate-700 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                       />
                     </label>
                     <div className="sm:col-span-2">
                       <button
                         type="submit"
                         disabled={paymentSubmitting}
-                        className="h-11 rounded-lg bg-stock-primary-blue px-4 text-sm font-semibold text-white disabled:opacity-60"
+                        className="h-11 rounded-xl bg-blue-700 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800 hover:shadow-md disabled:opacity-60 disabled:opacity-60"
                       >
                         {paymentSubmitting ? "Recording..." : "Record Payment"}
                       </button>
@@ -1055,7 +1060,7 @@ export function InvoiceManagementPage() {
                 </section>
               )}
 
-              <section className="rounded-xl border border-stock-border bg-white p-5 shadow-sm sm:p-7">
+              <section className="rounded-2xl border border-slate-200 bg-white shadow-sm p-5 shadow-sm sm:p-7">
                 <h2 className="text-lg font-semibold">Payment History</h2>
                 {payments.length === 0 ? (
                   <p className="mt-3 text-sm text-stock-secondary-text">
@@ -1064,14 +1069,14 @@ export function InvoiceManagementPage() {
                 ) : (
                   <div className="mt-4 overflow-x-auto">
                     <table className="w-full min-w-[40rem] text-left text-sm">
-                      <thead className="bg-stock-light-grey text-stock-secondary-text">
+                      <thead className="bg-slate-50 text-slate-500">
                         <tr>
                           {["Date", "Method", "Reference", "Recorded by", "Amount"].map(
                             (heading) => (
                               <th
                                 key={heading}
                                 scope="col"
-                                className="px-3 py-3 font-medium"
+                                className="px-4 py-4 font-semibold"
                               >
                                 {heading}
                               </th>
@@ -1083,23 +1088,23 @@ export function InvoiceManagementPage() {
                         {payments.map((payment) => (
                           <tr
                             key={payment._id}
-                            className="border-t border-stock-border"
+                            className="border-t border-slate-100"
                           >
-                            <td className="px-3 py-3">
+                            <td className="px-4 py-4">
                               {new Date(payment.createdAt).toLocaleString()}
                             </td>
-                            <td className="px-3 py-3">
+                            <td className="px-4 py-4">
                               {payment.paymentMethod.replaceAll("_", " ")}
                             </td>
-                            <td className="px-3 py-3">
+                            <td className="px-4 py-4">
                               {payment.reference || "—"}
                             </td>
-                            <td className="px-3 py-3">
+                            <td className="px-4 py-4">
                               {typeof payment.recordedBy === "string"
                                 ? "—"
                                 : payment.recordedBy.name}
                             </td>
-                            <td className="px-3 py-3 font-medium">
+                            <td className="px-4 py-4 font-semibold">
                               {formatAmount(payment.amount, invoice.currency)}
                             </td>
                           </tr>

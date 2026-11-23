@@ -110,9 +110,14 @@ function relationName<T extends { _id: string; supplierName?: string; warehouseN
 }
 
 function formatAmount(value: number, currency: string): string {
-  return new Intl.NumberFormat(undefined, {
+  const normalizedCurrency = currency?.trim().toUpperCase() ?? "";
+  const currencyCode = /^[A-Z]{3}$/.test(normalizedCurrency)
+    ? normalizedCurrency
+    : "INR";
+
+  return new Intl.NumberFormat("en-IN", {
     style: "currency",
-    currency: currency || "INR",
+    currency: currencyCode,
   }).format(value);
 }
 

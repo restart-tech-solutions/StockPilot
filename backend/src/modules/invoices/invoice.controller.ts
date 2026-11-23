@@ -107,9 +107,17 @@ const formatInvoiceDate = (date: Date): string =>
     timeZone: "UTC",
   }).format(date);
 
-const formatPdfAmount = (amount: number, currency: string): string =>
-  `${currency} ${amount.toFixed(2)}`;
+const formatPdfAmount = (amount: number, currency: string): string => {
+  const normalizedCurrency = currency?.trim().toUpperCase() ?? "";
+  const currencyCode = /^[A-Z]{3}$/.test(normalizedCurrency)
+    ? normalizedCurrency
+    : "INR";
 
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: currencyCode,
+  }).format(amount);
+};
 export const listAvailableSalesOrders = async (
   req: AuthenticatedRequest,
   res: Response

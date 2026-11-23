@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { AppShell } from "../../components/layout/AppShell";
@@ -38,6 +39,9 @@ export function CategoryManagementPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [refresh, setRefresh] = useState(0);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const businessId = workspace?.id;
 
   const canManage =
     !workspace?.membershipRole ||
@@ -45,19 +49,25 @@ export function CategoryManagementPage() {
       workspace.membershipRole
     );
 
+  // Load categories for selected workspace
   useEffect(() => {
-    if (!workspace?.id) {
+    if (!businessId) {
       setCategories([]);
       setLoading(false);
       return;
     }
 
     let active = true;
+
     setLoading(true);
     setError("");
 
+    const params = new URLSearchParams({
+      businessId,
+    });
+
     apiRequest<CategoryListResponse>(
-      `/categories?businessId=${encodeURIComponent(workspace.id)}`
+      `/categories?${params.toString()}`
     )
       .then((response) => {
         if (!response.success || !Array.isArray(response.categories)) {
@@ -74,13 +84,15 @@ export function CategoryManagementPage() {
         }
       })
       .finally(() => {
-        if (active) setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       });
 
     return () => {
       active = false;
     };
-  }, [workspace?.id, refresh]);
+  }, [businessId, refresh]);
 
   const resetForm = () => {
     setCategoryName("");
@@ -88,8 +100,16 @@ export function CategoryManagementPage() {
     setEditingId(null);
   };
 
-  const saveCategory = async (event: React.FormEvent<HTMLFormElement>) => {
+  // Create or update category
+  const saveCategory = async (
+    event: React.FormEvent<HTMLFormElement>
+  ) => {
     event.preventDefault();
+
+    if (!businessId) {
+      setError("Please select a business workspace first.");
+      return;
+    }
 
     if (!categoryName.trim()) {
       setError("Category name is required.");
@@ -102,6 +122,7 @@ export function CategoryManagementPage() {
 
     try {
       const payload = {
+        businessId,
         categoryName: categoryName.trim(),
         description: description.trim(),
       };
@@ -114,18 +135,20 @@ export function CategoryManagementPage() {
             body: JSON.stringify(payload),
           }
         );
+
         setSuccess("Category updated successfully.");
       } else {
         await apiRequest<CategoryResponse>("/categories", {
           method: "POST",
           body: JSON.stringify(payload),
         });
+
         setSuccess("Category created successfully.");
       }
 
       resetForm();
       setRefresh((value) => value + 1);
-    } catch (saveError) {
+    } catch (saveError: unknown) {
       setError(getError(saveError, "Unable to save category."));
     } finally {
       setSaving(false);
@@ -138,10 +161,17 @@ export function CategoryManagementPage() {
     setDescription(category.description || "");
     setError("");
     setSuccess("");
+
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // Delete category
   const deleteCategory = async (category: Category) => {
+    if (!businessId) {
+      setError("Please select a business workspace first.");
+      return;
+    }
+
     if (
       !window.confirm(
         `Delete "${category.categoryName}"? This action cannot be undone.`
@@ -152,17 +182,31 @@ export function CategoryManagementPage() {
 
     setError("");
     setSuccess("");
+    setDeletingId(category._id);
 
     try {
+      const params = new URLSearchParams({
+        businessId,
+      });
+
       await apiRequest(
-        `/categories/${encodeURIComponent(category._id)}`,
-        { method: "DELETE" }
+        `/categories/${encodeURIComponent(category._id)}?${params.toString()}`,
+        {
+          method: "DELETE",
+        }
       );
+
       setSuccess("Category deleted successfully.");
-      if (editingId === category._id) resetForm();
+
+      if (editingId === category._id) {
+        resetForm();
+      }
+
       setRefresh((value) => value + 1);
-    } catch (deleteError) {
+    } catch (deleteError: unknown) {
       setError(getError(deleteError, "Unable to delete category."));
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -184,11 +228,12 @@ export function CategoryManagementPage() {
         </Link>
       }
     >
-      {!workspace?.id ? (
+      {!businessId ? (
         <section className="rounded-xl border border-stock-border bg-white p-5">
           <p className="text-sm text-stock-secondary-text">
             Select a business workspace to manage categories.
           </p>
+
           <Link
             to="/workspaces"
             className="mt-4 inline-flex h-10 items-center rounded-lg bg-stock-primary-blue px-4 text-sm font-semibold text-white"
@@ -228,12 +273,15 @@ export function CategoryManagementPage() {
                     <span className="mb-1.5 block text-sm font-medium text-stock-primary-text">
                       Category Name *
                     </span>
+
                     <input
                       type="text"
                       required
                       maxLength={100}
                       value={categoryName}
-                      onChange={(event) => setCategoryName(event.target.value)}
+                      onChange={(event) =>
+                        setCategoryName(event.target.value)
+                      }
                       placeholder="e.g. Electronics"
                       className="h-11 w-full rounded-lg border border-stock-border bg-white px-3 text-sm text-stock-primary-text"
                     />
@@ -243,11 +291,14 @@ export function CategoryManagementPage() {
                     <span className="mb-1.5 block text-sm font-medium text-stock-primary-text">
                       Description
                     </span>
+
                     <input
                       type="text"
                       maxLength={500}
                       value={description}
-                      onChange={(event) => setDescription(event.target.value)}
+                      onChange={(event) =>
+                        setDescription(event.target.value)
+                      }
                       placeholder="Optional description"
                       className="h-11 w-full rounded-lg border border-stock-border bg-white px-3 text-sm text-stock-primary-text"
                     />
@@ -286,6 +337,7 @@ export function CategoryManagementPage() {
               <h2 className="text-lg font-semibold text-stock-primary-text">
                 All Categories
               </h2>
+
               <p className="text-sm text-stock-secondary-text">
                 {categories.length} categories in this workspace
               </p>
@@ -305,10 +357,18 @@ export function CategoryManagementPage() {
               <table className="w-full min-w-[35rem] text-left text-sm">
                 <thead className="bg-stock-light-grey text-stock-secondary-text">
                   <tr>
-                    <th className="px-4 py-3 font-medium">Category Name</th>
-                    <th className="px-4 py-3 font-medium">Description</th>
+                    <th className="px-4 py-3 font-medium">
+                      Category Name
+                    </th>
+
+                    <th className="px-4 py-3 font-medium">
+                      Description
+                    </th>
+
                     {canManage && (
-                      <th className="px-4 py-3 font-medium">Actions</th>
+                      <th className="px-4 py-3 font-medium">
+                        Actions
+                      </th>
                     )}
                   </tr>
                 </thead>
@@ -343,9 +403,11 @@ export function CategoryManagementPage() {
                         <td className="px-4 py-3 font-medium">
                           {category.categoryName}
                         </td>
+
                         <td className="px-4 py-3 text-stock-secondary-text">
                           {category.description || "—"}
                         </td>
+
                         {canManage && (
                           <td className="px-4 py-3">
                             <div className="flex gap-3">
@@ -356,12 +418,16 @@ export function CategoryManagementPage() {
                               >
                                 Edit
                               </button>
+
                               <button
                                 type="button"
+                                disabled={deletingId === category._id}
                                 onClick={() => void deleteCategory(category)}
-                                className="font-medium text-red-700 hover:underline"
+                                className="font-medium text-red-700 hover:underline disabled:opacity-50"
                               >
-                                Delete
+                                {deletingId === category._id
+                                  ? "Deleting..."
+                                  : "Delete"}
                               </button>
                             </div>
                           </td>

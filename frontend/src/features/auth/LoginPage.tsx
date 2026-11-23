@@ -9,7 +9,6 @@ import {
   signOut,
 } from "firebase/auth";
 import { auth } from "../../config/firebase";
-import { FormField } from "../../components/ui/FormField";
 import {
   apiRequest,
   StockPilotApiError,
@@ -48,7 +47,9 @@ function normalizeUser(response: AuthResponse): SessionUser {
 export function LoginPage() {
   const navigate = useNavigate();
   const { setUser } = useAuth();
+
   const [serverError, setServerError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -147,62 +148,206 @@ export function LoginPage() {
 
   return (
     <AuthLayout>
-      <h1 className="text-2xl font-semibold text-stock-deep-navy">
-        Login
-      </h1>
+      <div className="mb-8">
+        <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
+          <span className="h-1.5 w-1.5 rounded-full bg-blue-600" />
+          WELCOME BACK
+        </div>
 
-      <p className="mt-1 text-sm text-stock-secondary-text">
-        Sign in to your StockPilot account.
-      </p>
+        <h1 className="text-3xl font-bold tracking-tight text-[#10213D] sm:text-4xl">
+          Sign in to StockPilot
+        </h1>
+
+        <p className="mt-3 text-sm leading-6 text-slate-500">
+          Welcome back! Enter your account details to continue managing
+          your business.
+        </p>
+      </div>
 
       {serverError && (
         <div
           role="alert"
-          className="mt-5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+          className="mb-5 flex gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-700"
         >
-          {serverError}
+          <svg
+            viewBox="0 0 24 24"
+            className="mt-0.5 h-5 w-5 shrink-0"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 8v5m0 3h.01" />
+          </svg>
+          <span>{serverError}</span>
         </div>
       )}
 
       <form
-        className="mt-6 space-y-5"
+        className="space-y-5"
         onSubmit={handleSubmit(onSubmit)}
       >
-        <FormField
-          id="email"
-          label="Email address"
-          type="email"
-          autoComplete="email"
-          error={errors.email?.message}
-          {...register("email")}
-        />
+        <div>
+          <label
+            htmlFor="email"
+            className="mb-2 block text-sm font-semibold text-slate-700"
+          >
+            Email address
+          </label>
 
-        <FormField
-          id="password"
-          label="Password"
-          type="password"
-          autoComplete="current-password"
-          error={errors.password?.message}
-          {...register("password")}
-        />
+          <div className="relative">
+            <svg
+              viewBox="0 0 24 24"
+              className="absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+            >
+              <rect x="3" y="5" width="18" height="14" rx="2" />
+              <path d="m3 7 9 6 9-6" />
+            </svg>
+
+            <input
+              id="email"
+              type="email"
+              autoComplete="email"
+              placeholder="you@example.com"
+              aria-invalid={Boolean(errors.email)}
+              {...register("email")}
+              className={`h-12 w-full rounded-xl border bg-white pl-11 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 ${
+                errors.email
+                  ? "border-red-400"
+                  : "border-slate-200 hover:border-slate-300"
+              }`}
+            />
+          </div>
+
+          {errors.email && (
+            <p className="mt-1.5 text-xs text-red-600">
+              {errors.email.message}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <div className="mb-2 flex items-center justify-between">
+            <label
+              htmlFor="password"
+              className="block text-sm font-semibold text-slate-700"
+            >
+              Password
+            </label>
+          </div>
+
+          <div className="relative">
+            <svg
+              viewBox="0 0 24 24"
+              className="absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+            >
+              <rect x="4" y="10" width="16" height="11" rx="2" />
+              <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+            </svg>
+
+            <input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              placeholder="Enter your password"
+              aria-invalid={Boolean(errors.password)}
+              {...register("password")}
+              className={`h-12 w-full rounded-xl border bg-white pl-11 pr-12 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 ${
+                errors.password
+                  ? "border-red-400"
+                  : "border-slate-200 hover:border-slate-300"
+              }`}
+            />
+
+            <button
+              type="button"
+              onClick={() => setShowPassword((current) => !current)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-700"
+            >
+              {showPassword ? (
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                >
+                  <path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8" />
+                  <path d="M9.9 5.2A10.8 10.8 0 0 1 12 5c5 0 9 5 9 7s-1.5 3.5-3.5 4.8M6.2 6.2C3.7 7.7 3 10 3 12s4 7 9 7c1 0 2-.2 2.9-.5" />
+                </svg>
+              ) : (
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                >
+                  <path d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              )}
+            </button>
+          </div>
+
+          {errors.password && (
+            <p className="mt-1.5 text-xs text-red-600">
+              {errors.password.message}
+            </p>
+          )}
+        </div>
 
         <button
           type="submit"
           disabled={isSubmitting}
-          className="h-11 w-full rounded-lg bg-stock-primary-blue px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#174A91] px-4 text-sm font-semibold text-white shadow-lg shadow-blue-900/15 transition hover:bg-[#123B77] focus:outline-none focus:ring-4 focus:ring-blue-600/20 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isSubmitting ? "Signing in..." : "Login"}
+          {isSubmitting ? (
+            <>
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              Signing in...
+            </>
+          ) : (
+            <>
+              Sign in to your account
+              <svg
+                viewBox="0 0 24 24"
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M5 12h14m-6-6 6 6-6 6" />
+              </svg>
+            </>
+          )}
         </button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-stock-secondary-text">
-        New user?{" "}
-        <Link
-          to="/register"
-          className="font-medium text-stock-primary-blue hover:underline"
-        >
-          Register
-        </Link>
+      <div className="my-7 flex items-center gap-4">
+        <div className="h-px flex-1 bg-slate-200" />
+        <span className="text-xs text-slate-400">NEW TO STOCKPILOT?</span>
+        <div className="h-px flex-1 bg-slate-200" />
+      </div>
+
+      <Link
+        to="/register"
+        className="flex h-12 w-full items-center justify-center rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800"
+      >
+        Create a new account
+      </Link>
+
+      <p className="mt-7 text-center text-xs leading-5 text-slate-400">
+        Secure access to your business workspace.
+        <br />
+        Your business data stays organized in one place.
       </p>
     </AuthLayout>
   );

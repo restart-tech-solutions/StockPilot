@@ -112,12 +112,20 @@ function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof StockPilotApiError ? error.message : fallback;
 }
 
+
 function formatAmount(value: number, currency: string): string {
-  return new Intl.NumberFormat(undefined, {
+  const normalizedCurrency = currency?.trim().toUpperCase() ?? "";
+
+  const currencyCode = /^[A-Z]{3}$/.test(normalizedCurrency)
+    ? normalizedCurrency
+    : "INR";
+
+  return new Intl.NumberFormat("en-IN", {
     style: "currency",
-    currency: currency || "INR",
+    currency: currencyCode,
   }).format(value);
 }
+
 
 function relationName(
   value: string | CustomerOption | WarehouseOption,
@@ -573,104 +581,218 @@ export function SalesManagementPage() {
       )}
 
       {isList && (
-        <div className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-[1fr_15rem]">
-            <input
-              type="search"
-              value={search}
-              onChange={(event) => {
-                setSearch(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Search sale number or customer..."
-              aria-label="Search sales"
-              className="h-11 rounded-lg border border-stock-border bg-white px-3 text-sm"
-            />
-            <select
-              value={statusFilter}
-              onChange={(event) => {
-                setStatusFilter(event.target.value);
-                setPage(1);
-              }}
-              aria-label="Filter by sales status"
-              className="h-11 rounded-lg border border-stock-border bg-white px-3 text-sm"
-            >
-              <option value="">All statuses</option>
-              {statuses.map((status) => (
-                <option key={status} value={status}>
-                  {status.replaceAll("_", " ")}
-                </option>
-              ))}
-            </select>
-          </div>
-          <section className="overflow-hidden rounded-xl border border-stock-border bg-white">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[52rem] text-left text-sm">
-                <thead className="bg-stock-light-grey text-stock-secondary-text">
-                  <tr>
-                    {["Sale Number", "Customer", "Date", "Total", "Status", "Actions"].map(
-                      (heading) => (
-                        <th
-                          key={heading}
-                          scope="col"
-                          className="px-4 py-3 font-medium"
-                        >
-                          {heading}
-                        </th>
-                      )
+        <div className="space-y-6">
+          <section className="overflow-hidden rounded-2xl border border-stock-border bg-white shadow-sm">
+            <div className="p-6 sm:p-8">
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <span className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-bold uppercase tracking-wide text-blue-700">
+                    Sales Management
+                  </span>
+                  <h2 className="mt-4 text-2xl font-bold tracking-tight text-stock-primary-text sm:text-3xl">
+                    Manage your sales operations.
+                  </h2>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-stock-secondary-text sm:text-base">
+                    Track sales orders, monitor fulfillment and manage customer transactions from one place.
+                  </p>
+                </div>
+
+                {canManage && (
+                  <Link
+                    to="/sales/new"
+                    className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-stock-primary-blue px-5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
+                  >
+                    + Create Sale
+                  </Link>
+                )}
+              </div>
+
+              <div className="mt-7 grid gap-4 sm:grid-cols-2">
+                <div className="rounded-xl border border-stock-border bg-stock-light-grey p-5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-stock-secondary-text">
+                    Orders on this page
+                  </p>
+                  <p className="mt-2 text-3xl font-bold text-stock-primary-text">
+                    {salesOrders.length}
+                  </p>
+                  <p className="mt-1 text-xs text-stock-secondary-text">
+                    Showing up to 10 records
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-stock-border bg-stock-light-grey p-5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-stock-secondary-text">
+                    Page order value
+                  </p>
+                  <p className="mt-2 text-2xl font-bold text-stock-primary-text">
+                    {formatAmount(
+                      salesOrders.reduce(
+                        (total, order) => total + order.totalAmount,
+                        0
+                      ),
+                      workspace.currency
                     )}
+                  </p>
+                  <p className="mt-1 text-xs text-stock-secondary-text">
+                    Based on currently loaded orders
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="overflow-hidden rounded-2xl border border-stock-border bg-white shadow-sm">
+            <div className="flex flex-col gap-4 border-b border-stock-border p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-stock-primary-text">
+                  Sales Directory
+                </h2>
+                <p className="mt-1 text-sm text-stock-secondary-text">
+                  Search, filter and manage your sales orders.
+                </p>
+              </div>
+
+              <div className="grid w-full gap-3 sm:grid-cols-2 lg:max-w-2xl">
+                <input
+                  type="search"
+                  value={search}
+                  onChange={(event) => {
+                    setSearch(event.target.value);
+                    setPage(1);
+                  }}
+                  placeholder="Search sale number or customer..."
+                  aria-label="Search sales"
+                  className="h-11 min-w-0 rounded-xl border border-stock-border bg-white px-4 text-sm outline-none transition focus:border-stock-primary-blue focus:ring-2 focus:ring-blue-100"
+                />
+
+                <select
+                  value={statusFilter}
+                  onChange={(event) => {
+                    setStatusFilter(event.target.value);
+                    setPage(1);
+                  }}
+                  aria-label="Filter by sales status"
+                  className="h-11 rounded-xl border border-stock-border bg-white px-4 text-sm outline-none transition focus:border-stock-primary-blue focus:ring-2 focus:ring-blue-100"
+                >
+                  <option value="">All statuses</option>
+                  {statuses.map((status) => (
+                    <option key={status} value={status}>
+                      {status.replaceAll("_", " ")}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[720px] text-left text-sm">
+                <thead className="bg-stock-light-grey text-xs uppercase tracking-wide text-stock-secondary-text">
+                  <tr>
+                    {[
+                      "Sale Number",
+                      "Customer",
+                      "Date",
+                      "Total Amount",
+                      "Status",
+                      "Actions",
+                    ].map((heading) => (
+                      <th
+                        key={heading}
+                        scope="col"
+                        className="px-5 py-4 font-semibold"
+                      >
+                        {heading}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
-                <tbody>
+
+                <tbody className="divide-y divide-stock-border">
                   {loading ? (
                     <tr>
                       <td
                         colSpan={6}
-                        className="px-4 py-12 text-center text-stock-secondary-text"
+                        className="px-5 py-16 text-center text-stock-secondary-text"
                       >
                         Loading sales orders...
                       </td>
                     </tr>
                   ) : salesOrders.length === 0 ? (
                     <tr>
-                      <td
-                        colSpan={6}
-                        className="px-4 py-12 text-center text-stock-secondary-text"
-                      >
-                        No sales orders match this workspace and filter.
+                      <td colSpan={6} className="px-5 py-16 text-center">
+                        <div className="mx-auto max-w-sm">
+                          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-stock-light-grey text-xl">
+                            $
+                          </div>
+                          <p className="mt-3 font-semibold text-stock-primary-text">
+                            No sales orders found
+                          </p>
+                          <p className="mt-1 text-sm text-stock-secondary-text">
+                            No sales orders match this workspace and filter.
+                          </p>
+                        </div>
                       </td>
                     </tr>
                   ) : (
                     salesOrders.map((order) => (
-                      <tr key={order._id} className="border-t border-stock-border">
-                        <td className="px-4 py-3 font-medium">
-                          {order.salesOrderNumber}
+                      <tr
+                        key={order._id}
+                        className="transition hover:bg-stock-light-grey/60"
+                      >
+                        <td className="whitespace-nowrap px-5 py-4">
+                          <span className="font-semibold text-stock-primary-text">
+                            {order.salesOrderNumber}
+                          </span>
                         </td>
-                        <td className="px-4 py-3">{order.customerName}</td>
-                        <td className="px-4 py-3">
+
+                        <td className="px-5 py-4">
+                          <span className="font-medium text-stock-primary-text">
+                            {order.customerName}
+                          </span>
+                        </td>
+
+                        <td className="whitespace-nowrap px-5 py-4 text-stock-secondary-text">
                           {new Date(order.createdAt).toLocaleDateString()}
                         </td>
-                        <td className="px-4 py-3">
+
+                        <td className="whitespace-nowrap px-5 py-4 font-semibold text-stock-primary-text">
                           {formatAmount(order.totalAmount, workspace.currency)}
                         </td>
-                        <td className="px-4 py-3">
-                          {order.status.replaceAll("_", " ")}
-                        </td>
-                        <td className="px-4 py-3">
-                          <Link
-                            className="font-medium text-stock-primary-blue hover:underline"
-                            to={`/sales/${order._id}`}
+
+                        <td className="px-5 py-4">
+                          <span
+                            className={`inline-flex whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold ${
+                              order.status === "COMPLETED"
+                                ? "bg-green-50 text-green-700"
+                                : order.status === "DRAFT"
+                                  ? "bg-amber-50 text-amber-700"
+                                  : order.status === "CANCELLED"
+                                    ? "bg-red-50 text-red-700"
+                                    : "bg-blue-50 text-blue-700"
+                            }`}
                           >
-                            View
-                          </Link>
-                          {canManage && order.status === "DRAFT" && (
+                            {order.status.replaceAll("_", " ")}
+                          </span>
+                        </td>
+
+                        <td className="whitespace-nowrap px-5 py-4">
+                          <div className="flex items-center gap-3">
                             <Link
-                              className="ml-3 font-medium text-stock-primary-blue hover:underline"
-                              to={`/sales/${order._id}/edit`}
+                              className="font-semibold text-stock-primary-blue hover:underline"
+                              to={`/sales/${order._id}`}
                             >
-                              Edit
+                              View
                             </Link>
-                          )}
+
+                            {canManage && order.status === "DRAFT" && (
+                              <Link
+                                className="font-semibold text-stock-primary-text hover:underline"
+                                to={`/sales/${order._id}/edit`}
+                              >
+                                Edit
+                              </Link>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -678,30 +800,34 @@ export function SalesManagementPage() {
                 </tbody>
               </table>
             </div>
-          </section>
-          <div className="flex items-center justify-between text-sm text-stock-secondary-text">
-            <span>
-              Page {page} of {totalPages || 1}
-            </span>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                disabled={loading || page <= 1}
-                onClick={() => setPage((value) => value - 1)}
-                className="h-10 rounded-lg border border-stock-border bg-white px-3 disabled:opacity-50"
-              >
-                Previous
-              </button>
-              <button
-                type="button"
-                disabled={loading || page >= totalPages}
-                onClick={() => setPage((value) => value + 1)}
-                className="h-10 rounded-lg border border-stock-border bg-white px-3 disabled:opacity-50"
-              >
-                Next
-              </button>
+
+            <div className="flex flex-col gap-3 border-t border-stock-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-stock-secondary-text">
+                Page <span className="font-semibold text-stock-primary-text">{page}</span> of{" "}
+                <span className="font-semibold text-stock-primary-text">{totalPages || 1}</span>
+              </p>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  disabled={loading || page <= 1}
+                  onClick={() => setPage((value) => value - 1)}
+                  className="h-10 rounded-xl border border-stock-border bg-white px-4 text-sm font-medium text-stock-primary-text transition hover:bg-stock-light-grey disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Previous
+                </button>
+
+                <button
+                  type="button"
+                  disabled={loading || page >= totalPages}
+                  onClick={() => setPage((value) => value + 1)}
+                  className="h-10 rounded-xl border border-stock-border bg-white px-4 text-sm font-medium text-stock-primary-text transition hover:bg-stock-light-grey disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Next
+                </button>
+              </div>
             </div>
-          </div>
+          </section>
         </div>
       )}
 

@@ -3,17 +3,15 @@ import mongoose from "mongoose";
 import Business, { IBusiness } from "../../models/Business";
 import Membership, { IMembership } from "../../models/Membership";
 import { AuthenticatedRequest } from "../../middleware/auth.middleware";
-
+const SUPPORTED_CURRENCIES = new Set(["INR", "USD", "EUR", "GBP"]);
 export const createBusiness = async (
   req: AuthenticatedRequest,
   res: Response
 ) => {
   let session: mongoose.ClientSession | undefined;
-
   try {
     const { businessName, contactDetails, category, location, currency } =
       req.body;
-
     if (
       typeof businessName !== "string" ||
       !businessName.trim() ||
@@ -30,6 +28,14 @@ export const createBusiness = async (
           "Business name, category, location and currency are required",
       });
     }
+    const normalizedCurrency = currency.trim().toUpperCase();
+
+    if (!SUPPORTED_CURRENCIES.has(normalizedCurrency)) {
+      return res.status(400).json({
+        success: false,
+        message: "Unsupported currency. Choose INR, USD, EUR or GBP.",
+      });
+    }
 
     if (!req.user?.userId || req.user.role !== "BUSINESS_OWNER") {
       return res.status(403).json({
@@ -37,7 +43,6 @@ export const createBusiness = async (
         message: "Only business owners can create a business workspace",
       });
     }
-
     if (
       contactDetails !== undefined &&
       (typeof contactDetails !== "object" ||
@@ -49,7 +54,6 @@ export const createBusiness = async (
         message: "Contact details must be an object",
       });
     }
-
     const normalizedContactDetails =
       contactDetails &&
       typeof contactDetails === "object"
@@ -64,7 +68,6 @@ export const createBusiness = async (
                 : undefined,
           }
         : undefined;
-
     if (
       contactDetails?.email !== undefined &&
       (typeof contactDetails.email !== "string" ||
@@ -75,7 +78,6 @@ export const createBusiness = async (
         message: "Please provide a valid contact email",
       });
     }
-
     if (
       normalizedContactDetails?.email &&
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedContactDetails.email)
@@ -85,7 +87,6 @@ export const createBusiness = async (
         message: "Please provide a valid contact email",
       });
     }
-
     if (
       contactDetails?.phone !== undefined &&
       (typeof contactDetails.phone !== "string" ||
@@ -96,12 +97,10 @@ export const createBusiness = async (
         message: "Please provide a valid contact phone",
       });
     }
-
     session = await mongoose.startSession();
     const transactionSession = session;
     let business: IBusiness | undefined;
     let membership: IMembership | undefined;
-
     await transactionSession.withTransaction(async () => {
       [business] = await Business.create(
         [
@@ -111,12 +110,11 @@ export const createBusiness = async (
             contactDetails: normalizedContactDetails,
             category: category.trim(),
             location: location.trim(),
-            currency: currency.trim().toUpperCase(),
+            currency: normalizedCurrency,
           },
         ],
         { session: transactionSession }
       );
-
       [membership] = await Membership.create(
         [
           {
@@ -128,17 +126,14 @@ export const createBusiness = async (
         { session: transactionSession }
       );
     });
-
     await transactionSession.endSession();
     session = undefined;
-
     if (!business || !membership) {
       return res.status(500).json({
         success: false,
         message: "Failed to create business workspace",
       });
     }
-
     return res.status(201).json({
       success: true,
       message: "Business workspace created successfully",
@@ -171,7 +166,6 @@ export const createBusiness = async (
     });
   }
 };
-
 export const listBusinesses = async (
   req: AuthenticatedRequest,
   res: Response
@@ -183,25 +177,21 @@ export const listBusinesses = async (
         message: "Authentication required",
       });
     }
-
     const memberships = await Membership.find({
       userId: req.user.userId,
     }).lean();
-
     const businessIds = memberships.map(
       (membership) => membership.businessId
     );
     const businesses = await Business.find({
       _id: { $in: businessIds },
     }).lean();
-
     const membershipByBusinessId = new Map(
       memberships.map((membership) => [
         membership.businessId.toString(),
         membership.role,
       ])
     );
-
     return res.status(200).json({
       success: true,
       businesses: businesses.map((business) => ({
@@ -225,7 +215,6 @@ export const listBusinesses = async (
     });
   }
 };
-
 export const getBusiness = async (
   req: AuthenticatedRequest,
   res: Response
@@ -233,23 +222,19 @@ export const getBusiness = async (
   try {
     const membership = req.businessMembership;
     const businessId = membership?.businessId;
-
     if (!businessId) {
       return res.status(403).json({
         success: false,
         message: "You do not have access to this business",
       });
     }
-
     const business = await Business.findById(businessId).lean();
-
     if (!business) {
       return res.status(404).json({
         success: false,
         message: "Business workspace not found",
       });
     }
-
     return res.status(200).json({
       success: true,
       business: {
@@ -271,7 +256,6 @@ export const getBusiness = async (
     });
   }
 };
-
 export const updateBusiness = async (
   req: AuthenticatedRequest,
   res: Response
@@ -279,14 +263,12 @@ export const updateBusiness = async (
   try {
     const membership = req.businessMembership;
     const businessId = membership?.businessId;
-
     if (!businessId) {
       return res.status(403).json({
         success: false,
         message: "You do not have access to this business",
       });
     }
-
     const allowedFields = [
       "businessName",
       "contactDetails",
@@ -298,23 +280,19 @@ export const updateBusiness = async (
     const unsupportedFields = providedFields.filter(
       (field) => !allowedFields.includes(field)
     );
-
     if (unsupportedFields.length > 0) {
       return res.status(400).json({
         success: false,
         message: "Unsupported business workspace fields",
       });
     }
-
     if (providedFields.length === 0) {
       return res.status(400).json({
         success: false,
         message: "At least one business workspace field is required",
       });
     }
-
     const updates: Record<string, unknown> = {};
-
     for (const field of [
       "businessName",
       "category",
@@ -331,14 +309,22 @@ export const updateBusiness = async (
             message: `${field} must be a non-empty string`,
           });
         }
+        if (field === "currency") {
+          const normalizedCurrency = req.body[field].trim().toUpperCase();
 
-        updates[field] =
-          field === "currency"
-            ? req.body[field].trim().toUpperCase()
-            : req.body[field].trim();
+          if (!SUPPORTED_CURRENCIES.has(normalizedCurrency)) {
+            return res.status(400).json({
+              success: false,
+              message: "Unsupported currency. Choose INR, USD, EUR or GBP.",
+            });
+          }
+
+          updates[field] = normalizedCurrency;
+        } else {
+          updates[field] = req.body[field].trim();
+        }
       }
     }
-
     if (req.body.contactDetails !== undefined) {
       if (
         typeof req.body.contactDetails !== "object" ||
@@ -350,9 +336,7 @@ export const updateBusiness = async (
           message: "Contact details must be an object",
         });
       }
-
       const contactDetails: { email?: string; phone?: string } = {};
-
       if (req.body.contactDetails.email !== undefined) {
         if (
           typeof req.body.contactDetails.email !== "string" ||
@@ -363,7 +347,6 @@ export const updateBusiness = async (
             message: "Contact email must be a non-empty string",
           });
         }
-
         if (
           !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
             req.body.contactDetails.email.trim()
@@ -374,11 +357,9 @@ export const updateBusiness = async (
             message: "Please provide a valid contact email",
           });
         }
-
         contactDetails.email =
           req.body.contactDetails.email.trim();
       }
-
       if (req.body.contactDetails.phone !== undefined) {
         if (
           typeof req.body.contactDetails.phone !== "string" ||
@@ -389,14 +370,11 @@ export const updateBusiness = async (
             message: "Contact phone must be a non-empty string",
           });
         }
-
         contactDetails.phone =
           req.body.contactDetails.phone.trim();
       }
-
       updates.contactDetails = contactDetails;
     }
-
     const business = await Business.findOneAndUpdate(
       {
         _id: businessId,
@@ -404,14 +382,12 @@ export const updateBusiness = async (
       { $set: updates },
       { new: true, runValidators: true }
     ).lean();
-
     if (!business) {
       return res.status(403).json({
         success: false,
         message: "Only the business owner can update this workspace",
       });
     }
-
     return res.status(200).json({
       success: true,
       message: "Business workspace updated successfully",
