@@ -574,3 +574,89 @@ export const firebaseSyncUser = async (
     });
   }
 };
+
+export const changeLegacyPassword = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    const userId = req.user?.userId;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required.",
+      });
+    }
+
+    if (
+      typeof currentPassword !== "string" ||
+      typeof newPassword !== "string" ||
+      !currentPassword ||
+      !newPassword
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Current and new passwords are required.",
+      });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: "New password must be at least 8 characters.",
+      });
+    }
+
+    if (currentPassword === newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "New password must be different from current password.",
+      });
+    }
+
+    const user = await User.findById(userId).select("+password");
+
+    if (!user || !user.isActive) {
+      return res.status(404).json({
+        success: false,
+        message: "Active user account not found.",
+      });
+    }
+
+    if (user.firebaseUid) {
+      return res.status(400).json({
+        success: false,
+        message: "Use Firebase Authentication to change this account's password.",
+      });
+    }
+
+    const passwordMatches = await bcrypt.compare(
+      currentPassword,
+      user.password
+    );
+
+    if (!passwordMatches) {
+      return res.status(400).json({
+        success: false,
+        message: "Current password is incorrect.",
+      });
+    }
+
+    user.password = await bcrypt.hash(newPassword, 12);
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Password changed successfully.",
+    });
+  } catch (error) {
+    console.error("Change Password Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to change password.",
+    });
+  }
+};

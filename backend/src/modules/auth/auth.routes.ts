@@ -1,4 +1,3 @@
-
 import { Router } from "express";
 import {
   registerUser,
@@ -7,6 +6,7 @@ import {
   firebaseRegisterUser,
   migrateLegacyAccount,
   firebaseSyncUser,
+  changeLegacyPassword,
 } from "./auth.controller";
 import { authenticateUser } from "../../middleware/auth.middleware";
 
@@ -18,6 +18,9 @@ router.post("/login", loginUser);
 
 // Authenticated user profile
 router.get("/me", authenticateUser, getMe);
+
+// Change password
+router.post("/change-password", authenticateUser, changeLegacyPassword);
 
 // Firebase authentication
 router.post("/firebase/register", firebaseRegisterUser);

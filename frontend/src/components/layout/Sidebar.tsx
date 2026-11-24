@@ -1,5 +1,6 @@
 
-import { NavLink, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import type { ShellMode } from "./AppShell";
 import { useAuth } from "../../features/auth/authContext";
 
@@ -89,6 +90,38 @@ export function Sidebar({ mode, open, onClose }: SidebarProps) {
   const groups = mode === "business" ? businessNavigation : platformNavigation;
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
+
+  useEffect(() => {
+    const activeGroup = groups.find(
+      (group) =>
+        group.label &&
+        group.items.some((item) =>
+          item.path === "/"
+            ? location.pathname === "/"
+            : location.pathname === item.path ||
+              location.pathname.startsWith(`${item.path}/`)
+        )
+    );
+
+    if (activeGroup) {
+      setExpandedGroups((current) =>
+        current.includes(activeGroup.label)
+          ? current
+          : [...current, activeGroup.label]
+      );
+    }
+  }, [location.pathname, mode]);
+
+  const toggleGroup = (label: string) => {
+    setExpandedGroups((current) =>
+      current.includes(label)
+        ? current.filter((group) => group !== label)
+        : [...current, label]
+    );
+  };
 
   const handleLogout = () => {
     logout();
@@ -127,43 +160,65 @@ export function Sidebar({ mode, open, onClose }: SidebarProps) {
       </div>
 
       <nav className="min-h-0 flex-1 overflow-y-auto px-3 pb-6">
-        {groups.map((group, groupIndex) => (
-          <div
-            key={`${group.label}-${groupIndex}`}
-            className={
-              groupIndex === 0
-                ? "pb-2"
-                : "border-t border-white/10 py-3"
-            }
-          >
-            {group.label && (
-              <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-white/55">
-                {group.label}
-              </p>
-            )}
+        {groups.map((group, groupIndex) => {
+          const isExpanded = expandedGroups.includes(group.label);
 
-            <div className="space-y-1">
-              {group.items.map((item) => (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  end={item.path === "/" || item.path === "/platform"}
-                  onClick={onClose}
-                  className={({ isActive }) =>
-                    [
-                      "flex min-h-10 items-center rounded-lg px-3 text-sm font-medium transition-colors",
-                      isActive
-                        ? "bg-white/[0.12] text-white"
-                        : "text-white/75 hover:bg-white/10 hover:text-white",
-                    ].join(" ")
-                  }
+          return (
+            <div
+              key={`${group.label}-${groupIndex}`}
+              className={
+                groupIndex === 0
+                  ? "pb-2"
+                  : "border-t border-white/10 py-3"
+              }
+            >
+              {group.label && (
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(group.label)}
+                  aria-expanded={isExpanded}
+                  className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-white/65 transition-colors hover:bg-white/10 hover:text-white"
                 >
-                  {item.label}
-                </NavLink>
-              ))}
+                  <span>{group.label}</span>
+                  <svg
+                    viewBox="0 0 24 24"
+                    className={`h-4 w-4 transition-transform duration-200 ${
+                      isExpanded ? "rotate-180" : ""
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </button>
+              )}
+
+              {(groupIndex === 0 || isExpanded) && (
+                <div className="space-y-1">
+                  {group.items.map((item) => (
+                    <NavLink
+                      key={item.path}
+                      to={item.path}
+                      end={item.path === "/" || item.path === "/platform"}
+                      onClick={onClose}
+                      className={({ isActive }) =>
+                        [
+                          "flex min-h-10 items-center rounded-lg px-3 text-sm font-medium transition-colors",
+                          isActive
+                            ? "bg-white/[0.12] text-white"
+                            : "text-white/75 hover:bg-white/10 hover:text-white",
+                        ].join(" ")
+                      }
+                    >
+                      {item.label}
+                    </NavLink>
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </nav>
 
       <div className="border-t border-white/10 px-5 py-4">
