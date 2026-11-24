@@ -223,3 +223,48 @@ export const requireBusinessAccess = (...allowedRoles: BusinessRole[]) => {
     }
   };
 };
+export const authorizeSuperAdmin = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.user?.userId) {
+      res.status(401).json({
+        success: false,
+        message: "Authentication required.",
+      });
+      return;
+    }
+
+    const user = await User.findById(req.user.userId)
+      .select("_id role isActive")
+      .lean();
+
+    if (!user || !user.isActive) {
+      res.status(403).json({
+        success: false,
+        message: "Your account is inactive or unavailable.",
+      });
+      return;
+    }
+
+    if (user.role !== "SUPER_ADMIN") {
+      res.status(403).json({
+        success: false,
+        message: "Super Admin access is required.",
+      });
+      return;
+    }
+
+    req.user.role = user.role;
+    next();
+  } catch (error) {
+    console.error("Super Admin Authorization Error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to verify Super Admin permissions.",
+    });
+  }
+};

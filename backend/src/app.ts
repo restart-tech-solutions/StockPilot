@@ -26,6 +26,7 @@ import analyticsRoutes from "./modules/analytics/analytics.routes";
 import reportRoutes from "./modules/reports/report.routes";
 import forecastingRoutes from "./modules/forecasting/forecasting.routes";
 import subscriptionRoutes from "./modules/subscriptions/subscription.routes";
+import platformRoutes from "./modules/platform/platform.routes";
 const app: Application = express();
 
 // Middleware
@@ -53,6 +54,7 @@ app.get("/api/health", (_req, res) => {
 // Authentication & Business
 app.use("/api/auth", authRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
+app.use("/api/platform", platformRoutes);
 // Business Management sub-resources (mounted before /api/business to prevent :businessId shadowing)
 app.use("/api/business/tax-invoice-settings", taxInvoiceSettingsRoutes);
 app.use("/api/business/measurement-units", measurementUnitRoutes);
